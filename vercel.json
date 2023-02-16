@@ -1,8 +1,10 @@
 
 {
     "version": 2,
+
     "env": {
     },
+    "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
     "builds": [
       {
         "src": "app/index.js",
