@@ -22,6 +22,10 @@ const app = express()
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
+app.get('/', ()=>{
+    res.json({"hello":"world"})
+})
+
 app.get('/meta', async (req, res)=>{
     let url = req.query.url
     let tokenId = url.replace('=', '/').split('/').reverse()[0]
@@ -124,9 +128,6 @@ const fetchUtxoFromMemPool_space = async (address) => {
     const response = await rp(`https://mempool.space/api/address/${address}`);
     return JSON.parse(response);
 };
-
-
-  
 
 const getMetadataFromAlchemy = async (openseaUrl) => {
     const path = new URL(openseaUrl).pathname.split("/")
