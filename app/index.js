@@ -56,7 +56,7 @@ app.get('/v1/meta', async (req, res)=>{
     let vaultBtcAddress = metadata.addresses? metadata.addresses.filter(address=>{return address.coin == 'BTC'})[0].address: "error"
     let balances = tokenId? (await fetchBalance(tokenId)).balances: null
     let assetName = metadata.name? metadata.name: metadata.rawMetadata && metadata.rawMetadata.name ? metadata.rawMetadata.name: metadata.contract.name? metadata.contract.name + " #" + metadata.tokenId : metadata.tokenId
-    let properties = await classifyVaultWithGPT(assetName, metadata.description, balances.balances)
+    let properties = await classifyVaultWithGPT(assetName, metadata.description, balances)
     if (properties.success == false) {
         return res.json(properties, 500)
     }
@@ -177,7 +177,9 @@ const VAULTADDRESSES = [
 ]
 
 let training = {
-    "instructions": ["only respond with a valid properties json object", "seriously NEVER reply with invalid or incomplete json and ONLY json"],
+    "instructions": ["only respond with a valid properties json object", 
+    "seriously NEVER reply with invalid or incomplete json and ONLY json"
+],
     "training": [
         {
             "title": "Empty Vault Please Research before purchasing⚠️ Bitcoin Punk #6042 (Ordinal inscription #22940) - Contents Loading",
