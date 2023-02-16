@@ -22,7 +22,7 @@ const app = express()
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
-app.get('/', ()=>{
+app.get('/', (req, res)=>{
     res.json({"hello":"world"})
 })
 
