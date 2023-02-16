@@ -57,6 +57,7 @@ app.get('/v1/meta', async (req, res)=>{
     let balances = tokenId? (await fetchBalance(tokenId)).balances: null
     let assetName = metadata.name? metadata.name: metadata.rawMetadata && metadata.rawMetadata.name ? metadata.rawMetadata.name: metadata.contract.name? metadata.contract.name + " #" + metadata.tokenId : metadata.tokenId
     let properties = await classifyVaultWithGPT(assetName, metadata.description, balances)
+    properties = properties.properties? properties.properties: properties
     if (properties.success == false) {
         return res.json(properties, 500)
     }
@@ -88,7 +89,7 @@ app.listen(3000, () => {
 function fetchOrdinalHashes(properties) {
     if (properties && properties.projectName && ordinals[properties.projectName]) {
         let collection = ordinals[properties.projectName]
-        let lowestInscriptionId = collection[properties.assetId] && collection[properties.assetId].lowers? collection[properties.assetId].lowest: false
+        let lowestInscriptionId = collection[properties.assetId] && collection[properties.assetId].lowest? collection[properties.assetId].lowest: false
         let lowestInscriptionHash = lowestInscriptionId ? collection[properties.assetId].hashes[collection[properties.assetId].lowest] : null
         return lowestInscriptionHash
     }
