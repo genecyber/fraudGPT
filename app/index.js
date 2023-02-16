@@ -88,7 +88,7 @@ app.listen(3000, () => {
 function fetchOrdinalHashes(properties) {
     if (properties && properties.projectName && ordinals[properties.projectName]) {
         let collection = ordinals[properties.projectName]
-        let lowestInscriptionId = collection[properties.assetId].lowest
+        let lowestInscriptionId = collection[properties.assetId] && collection[properties.assetId].lowers? collection[properties.assetId].lowest: false
         let lowestInscriptionHash = lowestInscriptionId ? collection[properties.assetId].hashes[collection[properties.assetId].lowest] : null
         return lowestInscriptionHash
     }
