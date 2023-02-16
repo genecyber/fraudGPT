@@ -72,7 +72,7 @@
                     <div class="field">
                         <div class="ui left icon input">
                             <i class="cart arrow down icon"></i>
-                            <input type="text" name="url" placeholder="url...">
+                            <input class="url" type="text" name="url" placeholder="url...">
                         </div>
                     </div>
                     <div class="ui fluid large submit button">Get Fraud Score</div>
@@ -111,6 +111,13 @@
         </div>
     </div>
     <script>
+        $(document).ready(()=>{
+            let url = getParameterByName("url")
+            if (url){
+                $(".url").val(url)
+                $("form .submit.button").trigger('click')
+            }
+        })
         $('.back').click(()=>{
             $(".initial").addClass('visible')
             $(".initial").removeClass('hidden')
@@ -191,6 +198,14 @@
                 return `<div class="prop ui ${color} image label">
                             ${reason}
                         </div>`
+            }
+            function getParameterByName(name, url = window.location.href) {
+                name = name.replace(/[\[\]]/g, '\\$&');
+                var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                    results = regex.exec(url);
+                if (!results) return null;
+                if (!results[2]) return '';
+                return decodeURIComponent(results[2].replace(/\+/g, ' '));
             }
     </script>
 </body>
