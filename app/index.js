@@ -22,9 +22,9 @@ const app = express()
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
-app.get('/', (req, res)=>{
-    res.json({"hello":"world"})
-})
+// app.get('/', (req, res)=>{
+//     res.json({"hello":"world"})
+// })
 
 app.get('/meta', async (req, res)=>{
     let url = req.query.url
