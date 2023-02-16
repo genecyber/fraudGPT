@@ -137,6 +137,8 @@ const getMetadataFromAlchemy = async (openseaUrl) => {
     return response;
   };
 
+  module.exports = app;
+
 let training = {
     "instructions": ["only respond with a valid properties json object"],
     "training": [
