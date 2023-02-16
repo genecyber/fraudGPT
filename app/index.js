@@ -45,7 +45,7 @@ app.use(express.static('public'))
 //     res.json({"hello":"world"})
 // })
 
-app.get('/meta', async (req, res)=>{
+app.get('/v1/meta', async (req, res)=>{
     let url = req.query.url
     let tokenId = url.replace('=', '/').split('/').reverse()[0]
     let metadata = await fetchMetadataFromEmblem(tokenId)
@@ -68,7 +68,7 @@ app.get('/meta', async (req, res)=>{
     return res.json({assetName, description: metadata.description, properties, balances, utxoSet})
 })
 
-app.post('/classify', async (req, res) => {
+app.post('/v1/classify', async (req, res) => {
     let title = req.body.title || ''
     let description = req.body.desc || ''
     let properties = await classifyVaultWithGPT(title, description)

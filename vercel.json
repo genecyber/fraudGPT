@@ -11,8 +11,12 @@
     ],
     "routes": [
       {
-        "src": "/(.*)",
+        "src": "/v1/(.*)",
         "dest": "app/index.js"
+      },
+      {
+        "src": "/",
+        "dest": "public/index.html"
       }
     ]
   }
