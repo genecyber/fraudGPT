@@ -1,1 +1,144 @@
-<b>Hi</b>
+<html>
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+        integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/semantic.min.js"
+        integrity="sha512-Xo0Jh8MsOn72LGV8kU5LsclG7SUzJsWGhXbWcYs2MAmChkQzwiW/yTQwdJ8w6UA9C6EVG18GHb/TrYpYCjyAQw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-serialize-object/2.5.0/jquery.serialize-object.min.js"
+        integrity="sha512-Gn0tSSjkIGAkaZQWjx3Ctl/0dVJuTmjW/f9QyB302kFjU4uTNP4HtA32U2qXs/TRlEsK5CoEqMEMs7LnzLOBsA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/semantic.min.css"
+        integrity="sha512-KXol4x3sVoO+8ZsWPFI/r5KBVB/ssCGB5tsv2nVOKwLg33wTFP3fmnXa47FdSVIshVTgsYk/1734xSk9aFIa4A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style type="text/css">
+        body {
+            background-color: #DADADA;
+        }
+
+        body>.grid {
+            height: 100%;
+        }
+
+        .image {
+            margin-top: -100px;
+        }
+
+        .column {
+            max-width: 450px;
+        }
+
+        .hidden {
+            visibility: collapse;
+            display: none !important;
+        }
+        .score {
+            font-size: 8em !important;
+        }
+        .vault_image {
+            width: 20em;
+        }
+        .column {
+            max-width: unset !important;
+            margin-left: 10em;
+            margin-right: 10em;
+        }
+        .vault_description {
+            font-size: xx-small;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ui middle aligned center aligned grid initial">
+        <div class="column">
+            <h2 class="ui image header">
+                <img src="/logo-sm.png" class="image">
+                <div class="content">
+                    Enter Marketplace URL
+                </div>
+            </h2>
+            <form class="ui large form">
+                <div class="ui stacked segment">
+                    <div class="field">
+                        <div class="ui left icon input">
+                            <i class="cart arrow down icon"></i>
+                            <input type="text" name="url" placeholder="url...">
+                        </div>
+                    </div>
+                    <div class="ui fluid large submit button">Get Fraud Score</div>
+                </div>
+
+                <div class="ui error message"></div>
+
+            </form>
+            <div class="ui message">
+                New to Emblem Vault? <a href="https://emblem.finance">Visit us today</a>
+            </div>
+        </div>
+    </div>
+    <div class="ui middle aligned center aligned grid hidden display" >
+        <div class="column">
+            <div class="ui fluid large submit button back">Investigate another listing</div>
+            <div class="ui raised very padded text container segment ">
+                <p class="ui header score"></p>
+                <p><img class="ui medium rounded vault_image" src=""></p>
+                <p class="vault_name"></p>
+                <p class="vault_description"></p>
+            </div>
+            <div class="ui message">
+                New to Emblem Vault? <a href="https://emblem.finance">Visit us today</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        $('.back').click(()=>{
+            $(".initial").addClass('visible')
+            $(".initial").removeClass('hidden')
+            $(".display").removeClass('visible')
+            $(".display").addClass('hidden')
+        })
+        $('form .submit.button')
+            .api({
+                url: '/v1/meta/',
+                serializeForm: true,
+                beforeSend: function (settings) {
+                    $(".error").addClass('hidden')
+                    settings.urlData = { url: settings.data.url }
+                    return settings;
+                },
+                onResponse: function (response) {
+                    $(".display").removeClass('hidden')
+                    $(".initial").addClass('hidden')
+                    return response;
+                },onSuccess: function(response) {
+                    $(".score").text(response.properties.risk)
+                    switch(response.properties.risk){
+                        case "low":
+                            $(".score").addClass("green")
+                            break;
+                        case "med":
+                            $(".score").addClass("orange")
+                            break;
+                        case "high":
+                            $(".score").addClass("red")
+                            break;
+                    }
+                    $(".vault_image").attr('src', response.liveMetadata.media.length > 0? response.liveMetadata.media[0].raw: !response.metadata.image.includes("ipfs")? `response.metadata.image`: `https://gateway.ipfs.io/ipfs/${response.metadata.image_ipfs}`)
+                    $('.vault_name').html(response.assetName)
+                    $('.vault_description').html(response.description)
+                    
+                },
+                onFailure: function(response) {
+                    $(".error.message").html(`error: ${response.message}`)
+                    $(".error").addClass('visible')
+                    $(".error").removeClass('hidden')
+                }
+            })
+
+    </script>
+</body>
+
+</html>

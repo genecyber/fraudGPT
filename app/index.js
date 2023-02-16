@@ -47,6 +47,9 @@ app.use(express.static('public'))
 
 app.get('/v1/meta', async (req, res)=>{
     let url = req.query.url
+    try {new URL(url)} catch(err){
+        return res.json({success: false, message: "invalid url"}, 500)
+    }
     let tokenId = url.replace('=', '/').split('/').reverse()[0]
     let metadata = await fetchMetadataFromEmblem(tokenId)
     let liveMetadata = await getMetadataFromAlchemy(url)
@@ -54,18 +57,21 @@ app.get('/v1/meta', async (req, res)=>{
     let balances = tokenId? (await fetchBalance(tokenId)).balances: null
     let assetName = metadata.name? metadata.name: metadata.rawMetadata && metadata.rawMetadata.name ? metadata.rawMetadata.name: metadata.contract.name? metadata.contract.name + " #" + metadata.tokenId : metadata.tokenId
     let properties = await classifyVaultWithGPT(assetName, metadata.description, balances.balances)
+    if (properties.success == false) {
+        return res.json(properties, 500)
+    }
     let lowestInscriptionHash = properties.isOrdinal? fetchOrdinalHashes(properties): false
     let ordinalOwner = lowestInscriptionHash ? await fetchOwnerFromOrdinal_com(lowestInscriptionHash): properties.inscriptionLink? await fetchOwnerFromOrdinal_com(properties.inscriptionLink.split('/').reverse()[0]): null
     
     let utxoSet = await fetchUtxoFromMemPool_space(vaultBtcAddress)
     if ((properties.isOrdinal && ordinalOwner != vaultBtcAddress && utxoSet.mempool_stats.tx_count < 1)) {
-        properties.risk = properties.risk+" > ⚠️ high"
+        properties.risk = "high"
         properties.reasons.push("- empty vault")
         properties.reasons.push("- no pending tx")
     } else {
         properties.reasons.push('+ ordinal owner matches vault')
     }
-    return res.json({assetName, description: metadata.description, properties, balances, utxoSet})
+    return res.json({assetName, description: metadata.description, metadata, liveMetadata, properties, balances, utxoSet})
 })
 
 app.post('/v1/classify', async (req, res) => {
@@ -111,8 +117,13 @@ function cleanAndParseJsonFromGPT(str){
         return {}
     } else {str = str[0]}
     
-    str = str.text.replaceAll('\n ','').replaceAll('\n','').replace('properties = ','')
-    return JSON.parse(str)
+    str = str.text.replaceAll('\n ','').replaceAll('\n','').replace('properties = ','').replace('properties:','')
+    try {
+        str = JSON.parse(str)
+    } catch(err){
+        str= {success:false, "message": err.toString()}
+    }
+    return str
 }
 
 function groupTrainingAndPrompt(prompt){
@@ -160,7 +171,7 @@ const getMetadataFromAlchemy = async (openseaUrl) => {
   module.exports = app;
 
 let training = {
-    "instructions": ["only respond with a valid properties json object"],
+    "instructions": ["only respond with a valid properties json object", "seriously NEVER reply with invalid or incomplete json and ONLY json"],
     "training": [
         {
             "title": "Empty Vault Please Research before purchasing⚠️ Bitcoin Punk #6042 (Ordinal inscription #22940) - Contents Loading",
