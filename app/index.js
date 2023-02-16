@@ -7,6 +7,7 @@ const Network = require('alchemy-sdk').Network
 const rp = require('request-promise')
 const cheerio = require("cheerio")
 let ordinals = require("./collections/ordinals.json")
+var cors = require('cors')
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 })
@@ -19,8 +20,26 @@ const settings = {
 const alchemy = new Alchemy(settings)
 
 const app = express()
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
+app.use(cors())
+app.options('*', cors()) // include before other routes
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+const port = process.env.PORT || 3000; // default port to listen
+
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+app.options("/*", function (req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+  res.send(200);
+})
+
+app.use(express.static('public'))
 
 // app.get('/', (req, res)=>{
 //     res.json({"hello":"world"})
