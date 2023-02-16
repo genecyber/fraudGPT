@@ -52,7 +52,7 @@ app.get('/v1/meta', async (req, res)=>{
     }
     let tokenId = url.replace('=', '/').split('/').reverse()[0]
     let metadata = await fetchMetadataFromEmblem(tokenId)
-    let liveMetadata = await getMetadataFromAlchemy(url)
+    let liveMetadata = await getMetadataFromAlchemy(tokenId, VAULTADDRESSES.filter(item=>{return item.network == metadata.network})[0].address)
     let vaultBtcAddress = metadata.addresses? metadata.addresses.filter(address=>{return address.coin == 'BTC'})[0].address: "error"
     let balances = tokenId? (await fetchBalance(tokenId)).balances: null
     let assetName = metadata.name? metadata.name: metadata.rawMetadata && metadata.rawMetadata.name ? metadata.rawMetadata.name: metadata.contract.name? metadata.contract.name + " #" + metadata.tokenId : metadata.tokenId
@@ -159,16 +159,22 @@ const fetchUtxoFromMemPool_space = async (address) => {
     return JSON.parse(response);
 };
 
-const getMetadataFromAlchemy = async (openseaUrl) => {
-    const path = new URL(openseaUrl).pathname.split("/")
-    const tokenId = path[path.length - 1]
-    const contractAddress = path[path.length - 2]
-  
+const getMetadataFromAlchemy = async (tokenId, contractAddress) => {  
     const response = await alchemy.nft.getNftMetadata(contractAddress, tokenId)
     return response;
   };
 
-  module.exports = app;
+module.exports = app
+const VAULTADDRESSES = [
+    { network: "mainnet", address: "0x82c7a8f707110f5fbb16184a5933e9f78a34c6ab" },
+    { network: "rinkeby", address: "0xe70AbBc99D8eB32124BF022196c493DB4fBc50FD" },
+    { network: "matic", address: "0x8b8407c6184f1f0Fd1082e83d6A3b8349cAcEd12" },
+    { network: "mumbai", address: "0x8b8407c6184f1f0Fd1082e83d6A3b8349cAcEd12" },
+    { network: "xdai", address: "0x9058d1A5Fdba852403D5b080abAF31D1379EF653" },
+    { network: "bsc", address: "0x9523022eb4B465Db3e3037d83e4910E3cFF1bD49" },
+    { network: "fantom", address: "0x5434ba8b4A37755Cb3867C9fde39342C0D382857" },
+    { network: "aurora", address: "0x14509fCc07892E80eD6BE4cf171407d206A92164" }
+]
 
 let training = {
     "instructions": ["only respond with a valid properties json object", "seriously NEVER reply with invalid or incomplete json and ONLY json"],
