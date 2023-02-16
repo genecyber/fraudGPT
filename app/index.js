@@ -71,7 +71,7 @@ app.get('/v1/meta', async (req, res)=>{
     } else {
         properties.reasons.push('+ ordinal owner matches vault')
     }
-    return res.json({assetName, description: metadata.description, metadata, liveMetadata, properties, balances, utxoSet})
+    return res.json({assetName, description: metadata.description, metadata, liveMetadata, properties, balances, utxoSet, vaultBtcAddress, ordinalOwner})
 })
 
 app.post('/v1/classify', async (req, res) => {

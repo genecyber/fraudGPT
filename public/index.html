@@ -49,6 +49,11 @@
         .vault_description {
             font-size: xx-small;
         }
+        .prop {
+            margin-top: 10px !important;
+            margin-left: 10px !important;
+            margin-right: 10px !important;
+        }
     </style>
 </head>
 
@@ -88,6 +93,16 @@
                 <p><img class="ui medium rounded vault_image" src=""></p>
                 <p class="vault_name"></p>
                 <p class="vault_description"></p>
+                <h3>Vault address</h3>
+                <p class="vault_address"></p>
+                <h3>Ordinal Owner</h3>
+                <p class="ordinal_owner"></p>
+                <h3>What's described as in the vault</h3>
+                <p class="properties"></p>
+                <h3>What's actually in the vault</h3>
+                <p class="balances"></p>     
+                <h3>Risk Score Reasons</h3>
+                <p class="reasons"></p>              
             </div>
             <div class="ui message">
                 New to Emblem Vault? <a href="https://emblem.finance">Visit us today</a>
@@ -130,7 +145,11 @@
                     $(".vault_image").attr('src', response.liveMetadata.media.length > 0? response.liveMetadata.media[0].raw: !response.metadata.image.includes("ipfs")? `response.metadata.image`: `https://gateway.ipfs.io/ipfs/${response.metadata.image_ipfs}`)
                     $('.vault_name').html(response.assetName)
                     $('.vault_description').html(response.description)
-                    
+                    $('.vault_address').html(response.vaultBtcAddress)
+                    response.properties.isOrdinal? $('.ordinal_owner').html(response.ordinalOwner): {}
+                    displayProperties(response.properties)
+                    response.balances.length >0 ? displayBalances(response.balances): $(".balances").html("Empty Vault")
+                    response.properties.reasons.length > 0? displayReasons(response.properties.reasons): {}
                 },
                 onFailure: function(response) {
                     $(".error.message").html(`error: ${response.message}`)
@@ -138,7 +157,40 @@
                     $(".error").removeClass('hidden')
                 }
             })
-
+            function displayProperties(properties) {
+                $(".properties").html("")
+                Object.keys(properties).forEach(item=>{
+                    item != "inscriptionLink" && item != "reasons"?  $(".properties").append(createPropertyItem(item, properties[item])): {}
+                })
+            }
+            function displayBalances(balances) {
+                $(".balances").html("")
+                balances.forEach((balance, index)=>{
+                    Object.keys(balance).forEach(item=>{
+                        $(".balances").append(createPropertyItem(item, balances[index][item]))
+                    })
+                })
+            }
+            function displayReasons(reasons) {
+                $(".reasons").html("")
+                reasons.forEach((reason, index)=>{
+                   $(".reasons").append(createReasonItem(reason))                    
+                })
+            }
+            function createPropertyItem(name, value) {
+                return `<div class="prop ui blue image label">
+                            ${name}
+                            <div class="detail">
+                                ${value}
+                            </div>
+                        </div>`
+            }
+            function createReasonItem(reason) {
+                let color =  reason[0] == "+" ? "green" : "red"
+                return `<div class="prop ui ${color} image label">
+                            ${reason}
+                        </div>`
+            }
     </script>
 </body>
 
