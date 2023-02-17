@@ -101,8 +101,8 @@ async function classifyVaultWithGPT(title, description, balances) {
     const response = await openai.createCompletion({
         model: "text-davinci-003",
         prompt: payload,
-        temperature: 0.7,
-        max_tokens: 256,
+        temperature: 0.3,
+        max_tokens: 800,
         top_p: 1,
         frequency_penalty: 0,
         presence_penalty: 0,
