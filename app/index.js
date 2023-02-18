@@ -41,10 +41,6 @@ app.options("/*", function (req, res, next) {
 
 app.use(express.static('public'))
 
-// app.get('/', (req, res)=>{
-//     res.json({"hello":"world"})
-// })
-
 app.get('/v1/meta', async (req, res)=>{
     let url = req.query.url
     try {new URL(url)} catch(err){
@@ -75,6 +71,13 @@ app.get('/v1/meta', async (req, res)=>{
     return res.json({assetName, description: metadata.description, metadata, liveMetadata, properties, balances, utxoSet, vaultBtcAddress, ordinalOwner})
 })
 
+app.get('/v1/fraud', async(req, res)=>{
+    let tokenId = req.headers.tokenid
+    let password = req.headers.password
+    let response = await setFraud(tokenId, password)
+    return res.json(response)    
+})
+
 app.post('/v1/classify', async (req, res) => {
     let title = req.body.title || ''
     let description = req.body.desc || ''
@@ -101,7 +104,7 @@ async function classifyVaultWithGPT(title, description, balances) {
     const response = await openai.createCompletion({
         model: "text-davinci-003",
         prompt: payload,
-        temperature: 0.3,
+        temperature: 0.5,
         max_tokens: 800,
         top_p: 1,
         frequency_penalty: 0,
@@ -133,17 +136,23 @@ function groupTrainingAndPrompt(prompt){
 
 const fetchBalance = async (tokenId) => {
     const response = await rp(`https://api2.emblemvault.io/vault/balance/${tokenId}?live=false&_vercel_no_cache=1`);
-    return JSON.parse(response);
+    return JSON.parse(response)
 };
 
 const fetchMetadataFromEmblem = async (tokenId) => {
     const response = await rp(`https://api2.emblemvault.io/meta/${tokenId}?experimental=true&raw=true`);
-    return JSON.parse(response);
+    return JSON.parse(response)
 }
 
+
+
 const fetchOwnerFromOrdinal_com = async (inscriptionId) => {
-    const response = await rp(`https://ordinals.com/inscription/${inscriptionId}`);
-    return getAddress(response);
+    try {
+        const response = await rp(`https://ordinals.com/inscription/${inscriptionId}`);
+        return getAddress(response);
+    } catch(err){
+        return 'unknown'
+    }
 }
 
 const getAddress = (body) => {
@@ -163,7 +172,23 @@ const fetchUtxoFromMemPool_space = async (address) => {
 const getMetadataFromAlchemy = async (tokenId, contractAddress) => {  
     const response = await alchemy.nft.getNftMetadata(contractAddress, tokenId)
     return response;
-  };
+  }
+
+  async function setFraud(tokenId, password){
+    try {
+      var options = {
+        'method': 'GET',
+        'url': `https://api2.emblemvault.io/s:evmetadata/fraudFlag/${tokenId}?_vercel_no_cache=1`,
+        'headers': {
+          'password': password
+        }
+      };
+      let response = await rp(options);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
 
 module.exports = app
 const VAULTADDRESSES = [

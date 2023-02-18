@@ -72,7 +72,9 @@
                     <div class="field">
                         <div class="ui left icon input">
                             <i class="cart arrow down icon"></i>
+                            <input class="tokenId" type="hidden" name="tokenId" >
                             <input class="url" type="text" name="url" placeholder="url...">
+                            
                         </div>
                     </div>
                     <div class="ui fluid large submit button">Get Fraud Score</div>
@@ -82,7 +84,7 @@
 
             </form>
             <div class="ui message">
-                New to Emblem Vault? <a href="https://emblem.finance">Visit us today</a>
+                New to Emblem Vault? <a href="https://emblem.finance">Visit us today</a> | <a class="ordinals button">View Recents</a>
             </div>
         </div>
     </div>
@@ -91,6 +93,13 @@
             <div class="ui fluid large submit button back">Investigate another listing</div>
             <div class="ui raised very padded text container segment ">
                 <p class="ui header score"></p>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="lock icon"></i>
+                        <input class="password" type="password" name="password" placeholder="*********">
+                        <div class="ui fluid large flag button">Flag as fraud</div>
+                    </div>
+                </div>
                 <p><img class="ui medium rounded vault_image" src=""></p>
                 <p class="vault_name"></p>
                 <p class="vault_description"></p>
@@ -103,28 +112,72 @@
                 <h3>What's actually in the vault</h3>
                 <p class="balances"></p>     
                 <h3>Risk Score Reasons</h3>
-                <p class="reasons"></p>              
+                <p class="reasons"></p>
+                <p class="links"></p>
             </div>
             <div class="ui message">
-                New to Emblem Vault? <a href="https://emblem.finance">Visit us today</a>
+                New to Emblem Vault? <a href="https://emblem.finance">Visit us today</a> | <a class="ordinals button">View Recents</a>
             </div>
         </div>
     </div>
+    <div class="ui modal">
+        <div class="header modal_header">Recent Ordinal Vaults</div>
+        <div class="scrolling content modal_content">
+          <p>Loading...</p>
+        </div>
+      </div>
     <script>
         $(document).ready(()=>{
             let url = getParameterByName("url")
+            let start = getParameterByName("start") || 0
+            getVaults(start)
             if (url){
                 $(".url").val(url)
                 $("form .submit.button").trigger('click')
             }
         })
+        $(".ordinals").click(()=>{
+            $('.ui.modal')
+            .modal('show')
+        })
         $('.back').click(()=>{
             $(".initial").addClass('visible')
             $(".initial").removeClass('hidden')
             $(".display").removeClass('visible')
-            $(".display").addClass('hidden')
-            
+            $(".display").addClass('hidden')            
+        })       
+
+        $('.flag.button').api({
+            url: '/v1/fraud/',
+            serializeForm: true,
+            beforeSend: function(settings) {
+                let pass = $(".password").val()
+                localStorage.setItem("fraudPassword", pass)
+                settings.headers = {
+                    "password": pass,
+                    "tokenid": $(".tokenId").val()
+                }
+                return settings;
+            },
+            onComplete: function(response) {
+                console.log(response);
+            },
+            onSuccess: function(response) {
+                if (JSON.parse(response).success) {
+                    $('.flag.button').addClass("disabled")
+                    $('.flag.button').text("flagged")
+                } else {
+                    $('.flag.button').text("error")
+                    setTimeout(()=>{$('.flag.button').text("Flag as fraud")},2000)
+                }
+                
+            },
+            onError: function(error) {
+                $('.flag.button').text("error")
+                setTimeout(()=>{$('.flag.button').text("Flag as fraud")},2000)
+            }
         })
+
         $('form .submit.button')
             .api({
                 url: '/v1/meta/',
@@ -139,6 +192,13 @@
                     $(".initial").addClass('hidden')
                     return response;
                 },onSuccess: function(response) {
+                    response.metadata.fraud? ()=>{
+                        $(".flag").addClass("disabled");
+                        $(".flag").text("Already Flagged")
+                    }: {}
+                    $(".links").append(`view this vault on [<a href="https://opensea.io/assets/ethereum/0x82c7a8f707110f5fbb16184a5933e9f78a34c6ab/${response.metadata.tokenId}">opensea</a> | <a href="https://looksrare.org/collections/0x82C7a8f707110f5FBb16184A5933E9F78a34c6ab/${response.metadata.tokenId}">looksrare</a> | <a href="https://emblem.finance/nft?id=${response.metadata.tokenId}">emblelm vault</a>]`)
+                    $(".password").val(localStorage.getItem("fraudPassword"))
+                    $(".tokenId").val(response.metadata.tokenId)
                     $(".score").text(response.properties.risk)
                     switch(response.properties.risk){
                         case "low":
@@ -166,6 +226,28 @@
                     $(".error").removeClass('hidden')
                 }
             })
+
+            function getVaults(start){
+                $(".modal_content").text("")
+                fetch(`https://api2.emblemvault.io:443/ordinal/all/?start=${start}&size=10&live=true`)
+                    .then(response => response.json())
+                    .then(result => {     
+                        $(".modal_header").text(`(${start} - ${start + 10} of ${result.total}) Recent Ordinal Vaults`)
+                        result.records.forEach(record=>{
+                            $(".modal_content").append(`<a href="/?start=${start}&url=https://emblem.finance/nft?id=${record.tokenId}">${record.name}</a> | `)
+                        })
+                        $(".modal_content").append(`<a class="getMore"> Next Set</a>`)
+                        $(".modal_content").prepend(`<a class="getLess"> Previous Set</a> | `)
+                        $('.getMore').click(()=>{
+                            getVaults(start+10)
+                        })
+                        $('.getLess').click(()=>{
+                            getVaults(start> 10? start-10: 0)
+                        })
+                        
+                    })
+            }
+
             function displayProperties(properties) {
                 $(".properties").html("")
                 Object.keys(properties).forEach(item=>{
