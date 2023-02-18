@@ -110,7 +110,11 @@
                 <h3>What's described as in the vault</h3>
                 <p class="properties"></p>
                 <h3>What's actually in the vault</h3>
-                <p class="balances"></p>     
+                <p class="balances"></p> 
+                <h3>What's headed to the vault</h3>
+                <p class="incoming"></p>
+                <h3>Vault creator</h3>
+                <p class="vault_creator"></p>
                 <h3>Risk Score Reasons</h3>
                 <p class="reasons"></p>
                 <p class="links"></p>
@@ -196,7 +200,11 @@
                         $(".flag").addClass("disabled");
                         $(".flag").text("Already Flagged")
                     }: {}
-                    $(".links").append(`view this vault on [<a href="https://opensea.io/assets/ethereum/0x82c7a8f707110f5fbb16184a5933e9f78a34c6ab/${response.metadata.tokenId}">opensea</a> | <a href="https://looksrare.org/collections/0x82C7a8f707110f5FBb16184A5933E9F78a34c6ab/${response.metadata.tokenId}">looksrare</a> | <a href="https://emblem.finance/nft?id=${response.metadata.tokenId}">emblelm vault</a>]`)
+                    $(".links").text('')
+                    $(".links").append(`view this vault on [
+                        <a href="https://opensea.io/assets/ethereum/0x82c7a8f707110f5fbb16184a5933e9f78a34c6ab/${response.metadata.tokenId}" target="_blank">opensea</a> | 
+                        <a href="https://looksrare.org/collections/0x82C7a8f707110f5FBb16184A5933E9F78a34c6ab/${response.metadata.tokenId}" target="_blank">looksrare</a> | 
+                        <a href="https://emblem.finance/nft?id=${response.metadata.tokenId}" target="_blank">emblelm vault</a>]`)
                     $(".password").val(localStorage.getItem("fraudPassword"))
                     $(".tokenId").val(response.metadata.tokenId)
                     $(".score").text(response.properties.risk)
@@ -211,11 +219,13 @@
                             $(".score").addClass("red")
                             break;
                     }
+                    $(".incoming").html(`${response.utxoSet.mempool_stats.tx_count} incoming transactions<hr>${response.utxoSet.chain_stats.tx_count} past transactions`)
                     $(".vault_image").attr('src', response.liveMetadata.media.length > 0? response.liveMetadata.media[0].raw: !response.metadata.image.includes("ipfs")? `response.metadata.image`: `https://gateway.ipfs.io/ipfs/${response.metadata.image_ipfs}`)
                     $('.vault_name').html(response.assetName)
                     $('.vault_description').html(response.description)
-                    $('.vault_address').html(response.vaultBtcAddress)
-                    response.properties.isOrdinal? $('.ordinal_owner').html(response.ordinalOwner): {}
+                    $('.vault_creator').html(`<a target="_blank" href="https://etherscan.io/address/${response.metadata.to}">${response.metadata.to}</a><a target="_blank" href="https://opensea.io/${response.metadata.to}"><img width="3%" style="position:absolute;margin-left:5px;" src="/os.png"/></a>`)
+                    $('.vault_address').html(`<a target="_blank" href="https://mempool.space/address/${response.vaultBtcAddress}">${response.vaultBtcAddress}</a>`)
+                    response.properties.isOrdinal? $('.ordinal_owner').html(`<a target="_blank" href="https://mempool.space/address/${response.ordinalOwner}">${response.ordinalOwner}</a>`): {}
                     displayProperties(response.properties)
                     response.balances.length >0 ? displayBalances(response.balances): $(".balances").html("Empty Vault")
                     response.properties.reasons.length > 0? displayReasons(response.properties.reasons): {}
@@ -228,16 +238,17 @@
             })
 
             function getVaults(start){
+                start = Number(start)
                 $(".modal_content").text("")
                 fetch(`https://api2.emblemvault.io:443/ordinal/all/?start=${start}&size=10&live=true`)
                     .then(response => response.json())
                     .then(result => {     
                         $(".modal_header").text(`(${start} - ${start + 10} of ${result.total}) Recent Ordinal Vaults`)
-                        result.records.forEach(record=>{
-                            $(".modal_content").append(`<a href="/?start=${start}&url=https://emblem.finance/nft?id=${record.tokenId}">${record.name}</a> | `)
+                        result.records.forEach((record, index)=>{
+                            $(".modal_content").append(`${index+1}: <a href="/?start=${start}&url=https://emblem.finance/nft?id=${record.tokenId}">${record.name}</a> <hr> `)
                         })
                         $(".modal_content").append(`<a class="getMore"> Next Set</a>`)
-                        $(".modal_content").prepend(`<a class="getLess"> Previous Set</a> | `)
+                        $(".modal_content").prepend(`<a class="getLess"> Previous Set</a> <hr>`)
                         $('.getMore').click(()=>{
                             getVaults(start+10)
                         })
