@@ -121,6 +121,7 @@ async function classifyVaultWithGPT(title, description, balances) {
         delete body.description
         return body
     } catch(err){
+        console.log("ERR", err)
         body = {success: false}
         return body
     }
