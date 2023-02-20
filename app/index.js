@@ -75,6 +75,11 @@ app.get('/v1/fraud', async(req, res)=>{
     let tokenId = req.headers.tokenid
     let password = req.headers.password
     let response = await setFraud(tokenId, password)
+    response = JSON.parse(response)
+    let lr_response = await refreshLooksRare(tokenId)
+    response.lr = lr_response
+    let os_response = await updateOpenseaMetdata(tokenId)
+    response.os = os_response
     return res.json(response)    
 })
 
@@ -99,21 +104,28 @@ function fetchOrdinalHashes(properties) {
 }
 
 async function classifyVaultWithGPT(title, description, balances) {
-    let payload = groupTrainingAndPrompt({ title, description, balances })
+    try {
+        let payload = groupTrainingAndPrompt({ title, description, balances })
 
-    const response = await openai.createCompletion({
-        model: "text-davinci-003",
-        prompt: payload,
-        temperature: 0.5,
-        max_tokens: 800,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-    })
-    let body = cleanAndParseJsonFromGPT(response.data.choices)
-    delete body.title
-    delete body.description
-    return body
+        const response = await openai.createCompletion({
+            model: "text-davinci-003",
+            prompt: payload,
+            temperature: 0.5,
+            max_tokens: 800,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+        })
+        let body = cleanAndParseJsonFromGPT(response.data.choices)
+        delete body.title
+        delete body.description
+        return body
+    } catch(err){
+        body = {success: false}
+        return body
+    }
+    
+    
 }
 
 function cleanAndParseJsonFromGPT(str){
@@ -155,6 +167,8 @@ const fetchOwnerFromOrdinal_com = async (inscriptionId) => {
     }
 }
 
+
+
 const getAddress = (body) => {
     const $ = cheerio.load(body);
     const address = $('dd.monospace')
@@ -187,6 +201,47 @@ const getMetadataFromAlchemy = async (tokenId, contractAddress) => {
       return response;
     } catch (error) {
       throw error;
+    }
+  }
+
+  async function updateOpenseaMetdata(tokenId) {
+    const options = {
+      method: 'GET',
+      uri: `https://api.opensea.io/asset/0x82c7a8f707110f5fbb16184a5933e9f78a34c6ab/${tokenId}/?force_update=true`
+    };
+    
+    try {
+      const body = await rp(options);
+      const parsedBody = JSON.parse(body);
+      return parsedBody
+    } catch (error) {
+      console.log('Error updating Opensea metadata: ', error)
+      return false
+    }
+  }
+
+  async function refreshLooksRare(tokenId) {
+    try {
+    const options = {
+      method: 'POST',
+      uri: 'https://api.looksrare.org/api/v1/tokens/refresh',
+      headers: {
+        'X-Looks-Api-Key': process.env.LOOKSRARE_API_KEY,
+        'accept': 'application/json',
+        'content-type': 'application/json'
+      },
+      body: {
+        "collection": "0x82c7a8f707110f5fbb16184a5933e9f78a34c6ab",
+        "tokenId": tokenId
+      },
+      json: true
+    };
+  
+    let response = await rp(options)
+    return response;
+    } catch (error) {
+        console.log('Error updating LooksRare metadata: ', error)
+        return false
     }
   }
 
