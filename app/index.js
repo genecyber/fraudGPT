@@ -50,6 +50,7 @@ app.get('/v1/meta', async (req, res)=>{
     let metadata = await fetchMetadataFromEmblem(tokenId)
     let liveMetadata = await getMetadataFromAlchemy(tokenId, VAULTADDRESSES.filter(item=>{return item.network == metadata.network})[0].address)
     let vaultBtcAddress = metadata.addresses? metadata.addresses.filter(address=>{return address.coin == 'BTC'})[0].address: "error"
+    let vaultTaprootAddress = metadata.addresses? metadata.addresses.filter(address=>{return address.coin == 'TAP'}).length> 0? metadata.addresses.filter(address=>{return address.coin == 'TAP'})[0].address: false: false
     let balances = tokenId? (await fetchBalance(tokenId)).balances: null
     let assetName = metadata.name? metadata.name: metadata.rawMetadata && metadata.rawMetadata.name ? metadata.rawMetadata.name: metadata.contract.name? metadata.contract.name + " #" + metadata.tokenId : metadata.tokenId
     let properties = await classifyVaultWithGPT(assetName, metadata.description, balances)
@@ -193,7 +194,7 @@ const getMetadataFromAlchemy = async (tokenId, contractAddress) => {
     try {
       var options = {
         'method': 'GET',
-        'url': `https://api2.emblemvault.io/s:evmetadata/fraudFlag/${tokenId}?_vercel_no_cache=1`,
+        'url': `https://api2.emblemvault.io/fraudFlag/${tokenId}?_vercel_no_cache=1`,
         'headers': {
           'password': password
         }
